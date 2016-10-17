@@ -13,24 +13,24 @@ RowsOfB supports a number of matrix operations. Some are unary, and some are bin
 In the following documentation, `[A]` denotes the matrix named 'A' and `c` denotes a scalar.
 
 ### Unary operations
-    - `inv [A]`: Calculates the inverse of 'A', or indicates that no such inverse exists.
-    - `trans [A]`: Calculates the transpose of 'A'.
-    - `ref [A]`: Uses Gauss-Jordan elimination to put 'A' into row echelon form.
-    - `rref [A]`: Uses Gauss-Jordan elimination to put 'A' into reduced row echelon form.
+ - `inv [A]`: Calculates the inverse of 'A', or indicates that no such inverse exists.
+ - `trans [A]`: Calculates the transpose of 'A'.
+ - `ref [A]`: Uses Gauss-Jordan elimination to put 'A' into row echelon form.
+ - `rref [A]`: Uses Gauss-Jordan elimination to put 'A' into reduced row echelon form.
 
 ### Binary operations
-    - `add [A] [B]`: Adds matrix 'A' to 'B'.
-    - `mul [A] [B]`: Multiplies matrix 'A' and 'B'.
-    - `scl c [A]`: Multiplies matrix 'A' by the scalar 'c'.
-    - `aug [A] [B]`: Augments 'A' with 'B'.
+ - `add [A] [B]`: Adds matrix 'A' to 'B'.
+ - `mul [A] [B]`: Multiplies matrix 'A' and 'B'.
+ - `scl c [A]`: Multiplies matrix 'A' by the scalar 'c'.
+ - `aug [A] [B]`: Augments 'A' with 'B'.
 
 ## Commands
 
 RowsOfB operates as an interactive shell. Every operation listed above is also a command. The result of every command is stored in a hidden result slot. In addition to those operations, several commands exist:
 
-    - `def [A]`: Opens an interactive process to define the matrix 'A'.
-    - `set [A] [B]`: Sets matrix 'A' to matrix 'B'. In essence, it copies 'B' into 'A'.
-    - `set [A]`: Sets matrix 'A' to the result of the last command.
-    - `zro [A]`: Zeros matrix 'A'. Equivalent to `scl 0 [A]`.
-    - `del [A]`: Deletes matrix 'A'. A deleted matrix has no size and no entries, and any operations using a deleted matrix raises an error.
-    - `clr`: Deletes all matrices. This is the equivalent to restarting RowsOfB.
+ - `def [A]`: Opens an interactive process to define the matrix 'A'.
+ - `set [A] [B]`: Sets matrix 'A' to matrix 'B'. In essence, it copies 'B' into 'A'.
+ - `set [A]`: Sets matrix 'A' to the result of the last command.
+ - `zro [A]`: Zeros matrix 'A'. Equivalent to `scl 0 [A]`.
+ - `del [A]`: Deletes matrix 'A'. A deleted matrix has no size and no entries, and any operations using a deleted matrix raises an error.
+ - `clr`: Deletes all matrices. This is the equivalent to restarting RowsOfB.
