@@ -3,8 +3,8 @@ package matrix
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"strconv"
+	"strings"
 )
 
 //Frac represents a fractional number.
@@ -31,8 +31,32 @@ func NewScalarFrac(s int) Frac {
 	return Frac{n: s, d: 1}
 }
 
+//ParseFrac parses a string fraction, returning an error if the fraction is invalid.
+func ParseFrac(s string) (Frac, error) {
+	fields := strings.Split(s, "/")
+
+	if len(fields) == 1 {
+		fields = append(fields, "1")
+	}
+
+	n, err := strconv.Atoi(fields[0])
+	if err != nil {
+		return Frac{}, err
+	}
+
+	d, err := strconv.Atoi(fields[1])
+	if err != nil {
+		return Frac{}, err
+	}
+
+	return NewFrac(n, d), nil
+}
+
 //String returns a string representation of the fraction.
 func (f Frac) String() string {
+	if f.d == 1 {
+		return strconv.Itoa(f.n)
+	}
 	return strconv.Itoa(f.n) + "/" + strconv.Itoa(f.d)
 }
 
@@ -114,10 +138,6 @@ func gcd(i1, i2 int) int {
 func (f Frac) Reduce() Frac {
 	d := gcd(f.n, f.d)
 
-	if d == 0 {
-		fmt.Printf("Got fraction %v\n", f)
-	}
-
 	f1 := Frac{n: f.n / d, d: f.d / d}
 
 	f1.normalizeSignage()
@@ -132,6 +152,11 @@ type M struct {
 
 	//The values of the matrix, in row order.
 	values []Frac
+}
+
+//NewWithValues returns a new matrix with initial values vals.
+func NewWithValues(r, c int, vals []Frac) M {
+	return M{r: r, c: c, values: vals}
 }
 
 //New returns a zero matrix of size r,c.
@@ -276,7 +301,7 @@ func Ref(m M) M {
 	return m
 }
 
-//Rref takes a copy of a matrix and returns it in rrrrrrreduced rrrrow echelon-a form-a!
+//Rref takes a copy of a matrix and returns it in rrrrrrreduced rrrrow echelon-a forrrrm-a!
 func Rref(m M) M {
 	m = copyMatrix(m)
 
@@ -304,7 +329,7 @@ func Inverse(m M) (M, error) {
 	m = copyMatrix(m)
 
 	if m.Rows() != m.Cols() {
-		return m, errors.New("Non-square matrices have no inverse!")
+		return m, errors.New("non-square matrices have no inverse")
 	}
 
 	m, _ = Augment(m, Identity(m.r)) // ignore error because Identity will always match m row size
@@ -321,7 +346,7 @@ func Inverse(m M) (M, error) {
 		}
 
 		if !found { //no leading entry that is one... not the identity, not invertible :(
-			return m, errors.New("Matrix has no inverse!")
+			return m, errors.New("matrix has no inverse")
 		}
 	}
 
@@ -357,7 +382,7 @@ func Identity(i int) M {
 //It returns an error if the two matrices do not have the same number of rows.
 func Augment(a, b M) (M, error) {
 	if a.r != b.r {
-		return a, errors.New("Augmented matrices must have equal row counts!")
+		return a, errors.New("augmented matrices must have equal row counts")
 	}
 
 	rm := M{r: a.r, c: a.c + b.c}
@@ -383,7 +408,7 @@ func Augment(a, b M) (M, error) {
 //It returns an error if a and b are not the same size.
 func Add(a, b M) (M, error) {
 	if a.r != b.r || a.c != b.c {
-		return a, errors.New("Addition requires two identically-sized matrices!")
+		return a, errors.New("addition requires two identically-sized matrices")
 	}
 
 	rm := copyMatrix(b)
@@ -397,4 +422,37 @@ func Add(a, b M) (M, error) {
 	return rm, nil
 }
 
-//TODO: mul, scl
+//Scale scales a matrix by a... you guessed it... scalar. It returns this new matrix.
+func Scale(s Frac, m M) M {
+	m = copyMatrix(m)
+
+	for r := 1; r <= m.Rows(); r++ {
+		m.MultiplyRow(r, s)
+	}
+
+	return m
+}
+
+//Multiply multiplies a by b. If the matrices cannot be multiplied, an error is returned.
+func Multiply(a, b M) (M, error) {
+	if a.c != b.r {
+		return a, errors.New("multiplication can only be done on matrices A and B if the number of columns of A equals the number of rows of B")
+	}
+
+	rm := M{r: a.r, c: b.c, values: make([]Frac, a.r*b.c)}
+
+	for r := 1; r <= rm.Rows(); r++ {
+		for c := 1; c <= rm.Cols(); c++ {
+			sum := NewScalarFrac(0)
+			for count := 1; count <= a.c; count++ {
+				f1 := a.Get(r, count)
+				f2 := b.Get(count, c)
+				res := f1.Mul(f2)
+				sum = sum.Add(res)
+			}
+			rm.Set(r, c, sum)
+		}
+	}
+
+	return rm, nil
+}

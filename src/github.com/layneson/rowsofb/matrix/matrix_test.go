@@ -53,6 +53,13 @@ func matrixEquals(m1, m2 M) bool {
 	return true
 }
 
+func TestFracAdd(t *testing.T) {
+	res := NewFrac(-15, 2).Add(NewFrac(7, 8))
+	if !fractionEquals(res, NewFrac(-53, 8)) {
+		t.Errorf("Fraction addition failed: expected %v but got %v", NewFrac(-53, 8), res)
+	}
+}
+
 func TestReduce(t *testing.T) {
 	tests := [][]Frac{
 		{NewFrac(21, 3), NewScalarFrac(7)},
@@ -155,6 +162,16 @@ func TestRref(t *testing.T) {
 			{"0", "0", "1"},
 		})},
 
+		{manualMatrix([][]string{
+			{"1", "2", "3"},
+			{"2", "3", "4"},
+			{"5/2", "6/3", "7/8"},
+		}), manualMatrix([][]string{
+			{"1", "0", "-1"},
+			{"0", "1", "2"},
+			{"0", "0", "-5/8"},
+		})},
+
 		{New(5, 5), New(5, 5)},
 	}
 
@@ -236,6 +253,62 @@ func TestAdd(t *testing.T) {
 		}
 		if !matrixEquals(res, tst[2]) {
 			t.Error("Incorrect matrix addition!")
+		}
+	}
+}
+
+func TestScale(t *testing.T) {
+	tests := [][]interface{}{
+		{manualMatrix([][]string{
+			{"1", "2", "2"},
+			{"7", "1", "-1"},
+			{"2", "3/2", "0"},
+		}), NewScalarFrac(2), manualMatrix([][]string{
+			{"2", "4", "4"},
+			{"14", "2", "-2"},
+			{"4", "3", "0"},
+		})},
+	}
+
+	for _, tst := range tests {
+		m1 := tst[0].(M)
+		s := tst[1].(Frac)
+		m2 := tst[2].(M)
+
+		res := Scale(s, m1)
+		if !matrixEquals(res, m2) {
+			t.Error("Incorrect matrix scalar multiplication!")
+		}
+	}
+}
+
+func TestMult(t *testing.T) {
+	tests := [][]M{
+		{manualMatrix([][]string{
+			{"1", "2", "1", "1"},
+			{"7", "1", "2", "0"},
+			{"3", "-1", "1", "0"},
+		}), manualMatrix([][]string{
+			{"1", "0", "1"},
+			{"0", "2", "0"},
+			{"1", "7", "0"},
+			{"0", "0", "-1"},
+		}), manualMatrix([][]string{
+			{"2", "11", "0"},
+			{"9", "16", "7"},
+			{"4", "5", "3"},
+		})},
+	}
+
+	for _, tst := range tests {
+		res, err := Multiply(tst[0], tst[1])
+		if err != nil {
+			t.Errorf("Matrix multiplication failed with error: %v", err)
+		}
+
+		if !matrixEquals(res, tst[2]) {
+			t.Error("Incorrect result of matrix multiplication!")
+			t.Errorf("Expected \n%v but got \n%v", tst[2], res)
 		}
 	}
 }
