@@ -6,8 +6,15 @@ import (
 	"os"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/layneson/rowsofb/env"
 )
+
+var errorColor = color.New(color.FgRed)
+var promptColor = color.New(color.FgGreen)
+var cmdInputColor = color.New(color.FgCyan)
+var matInputColor = color.New(color.FgHiBlue)
+var resultColor = color.New(color.FgMagenta)
 
 //Run starts the CLI loop.
 func Run() {
@@ -16,7 +23,8 @@ func Run() {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for {
-		fmt.Print("> ")
+		promptColor.Print("> ")
+		cmdInputColor.Set()
 
 		scanner.Scan()
 
@@ -34,16 +42,19 @@ func Run() {
 
 		cmd, ok := commands[fields[0]]
 		if !ok {
-			fmt.Println("[!] That command does not exist.")
+			errorColor.Println("[!] That command does not exist.")
 			continue
 		}
+
+		fmt.Println()
 
 		err := cmd(environment, fields[1:])
 		if err != nil {
-			fmt.Printf("[!] %v.\n", err)
+			errorColor.Printf("[!] %v.\n", err)
 			continue
 		}
 
-		fmt.Println(environment.GetResult())
+		resultColor.Println(renderMatrix(environment.GetResult()))
+		fmt.Println()
 	}
 }

@@ -173,14 +173,25 @@ func New(r, c int) M {
 func (m M) String() string {
 	var buff bytes.Buffer
 
+	buff.WriteString("┌  ")
+	for c := 1; c < m.Cols(); c++ {
+		buff.WriteString(" \t")
+	}
+	buff.WriteString("  ┐\n")
 	for r := 1; r <= m.Rows(); r++ {
+		buff.WriteString("│ ")
 		buff.WriteString(m.Get(r, 1).String())
 		for c := 2; c <= m.Cols(); c++ {
 			buff.WriteString("\t")
 			buff.WriteString(m.Get(r, c).String())
 		}
-		buff.WriteString("\n")
+		buff.WriteString(" │\n")
 	}
+	buff.WriteString("└  ")
+	for c := 1; c < m.Cols(); c++ {
+		buff.WriteString(" \t")
+	}
+	buff.WriteString("  ┘")
 
 	return buff.String()
 }

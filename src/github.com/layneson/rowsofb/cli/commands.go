@@ -3,7 +3,6 @@ package cli
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -222,7 +221,7 @@ var commands = map[string]CommandHandler{
 
 		scanner := bufio.NewScanner(os.Stdin)
 
-		fmt.Print(":\t")
+		matInputColor.Set()
 
 		scanner.Scan()
 
@@ -246,7 +245,7 @@ var commands = map[string]CommandHandler{
 		}
 
 		for {
-			fmt.Print(":\t")
+			//fmt.Print(":\t")
 
 			scanner.Scan()
 			line := scanner.Text()
