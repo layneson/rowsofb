@@ -256,8 +256,8 @@ func copyMatrix(m M) M {
 func Transpose(m M) M {
 	rm := M{r: m.c, c: m.r, values: make([]Frac, m.c*m.r)}
 
-	for r := 1; r < m.r; r++ {
-		for c := 1; c < m.c; c++ {
+	for r := 1; r <= m.r; r++ {
+		for c := 1; c <= m.c; c++ {
 			rm.Set(c, r, m.Get(r, c))
 		}
 	}

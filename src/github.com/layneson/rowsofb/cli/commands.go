@@ -3,6 +3,7 @@ package cli
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -219,6 +220,8 @@ var commands = map[string]CommandHandler{
 		var mvals []matrix.Frac
 		var r, c int
 
+		fmt.Println()
+
 		scanner := bufio.NewScanner(os.Stdin)
 
 		matInputColor.Set()
@@ -291,6 +294,67 @@ var commands = map[string]CommandHandler{
 		}
 
 		e.SetResult(m)
+
+		return nil
+	},
+
+	"set": func(e *env.E, args []string) error {
+		if len(args) != 1 && len(args) != 2 {
+			return errIncorrectNumberOfArgs
+		}
+
+		var m matrix.M
+		if len(args) == 1 {
+			m = e.GetResult()
+		} else {
+			var err error
+			m, err = e.Get(args[1])
+			if err != nil {
+				return err
+			}
+		}
+
+		return e.Set(args[0], m)
+	},
+
+	"zero": func(e *env.E, args []string) error {
+		if len(args) != 1 {
+			return errIncorrectNumberOfArgs
+		}
+
+		m, err := e.Get(args[0])
+		if err != nil {
+			return err
+		}
+
+		for r := 1; r <= m.Rows(); r++ {
+			for c := 1; c <= m.Cols(); c++ {
+				m.Set(r, c, matrix.NewScalarFrac(0))
+			}
+		}
+
+		err = e.Set(args[0], m)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	},
+
+	"del": func(e *env.E, args []string) error {
+		if len(args) != 1 {
+			return errIncorrectNumberOfArgs
+		}
+
+		return e.Delete(args[0])
+	},
+
+	"clr": func(e *env.E, args []string) error {
+		if len(args) != 0 {
+			return errIncorrectNumberOfArgs
+		}
+
+		e.Clear()
 
 		return nil
 	},

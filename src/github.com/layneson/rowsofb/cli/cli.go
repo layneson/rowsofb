@@ -31,6 +31,12 @@ func Run() {
 		line := scanner.Text()
 
 		if line == "" {
+			resultColor.Set()
+
+			fmt.Println()
+			fmt.Println(renderMatrix(environment.GetResult()))
+			fmt.Println()
+
 			continue
 		}
 
@@ -46,13 +52,13 @@ func Run() {
 			continue
 		}
 
-		fmt.Println()
-
 		err := cmd(environment, fields[1:])
 		if err != nil {
 			errorColor.Printf("[!] %v.\n", err)
 			continue
 		}
+
+		fmt.Println()
 
 		resultColor.Println(renderMatrix(environment.GetResult()))
 		fmt.Println()
