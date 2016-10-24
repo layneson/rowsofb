@@ -10,7 +10,7 @@ RowsOfB is terminal-based because it is convenient to have on a computer. Many s
 
 RowsOfB supports a number of matrix operations. Some are unary, and some are binary. Binary operations take either two matrices or a scalar and a matrix.
 
-In the following documentation, `[A]` denotes the matrix named 'A' and `c` denotes a scalar.
+In the following documentation, `[A]` denotes the matrix named 'A' and `c` denotes a scalar. When entering commands, the brackets shown are _not_ typed.
 
 ### Unary operations
  - `inv [A]`: Calculates the inverse of 'A', or indicates that no such inverse exists.
@@ -34,3 +34,9 @@ RowsOfB operates as an interactive shell. Every operation listed above is also a
  - `zero [A]`: Zeros matrix 'A'. Equivalent to `scl 0 [A]`.
  - `del [A]`: Deletes matrix 'A'. A deleted matrix has no size and no entries, and any operations using a deleted matrix raises an error.
  - `clr`: Deletes all matrices. This is the equivalent to restarting RowsOfB.
+
+## Assignment Shorthand
+
+RowsOfB implements a shorthand notation for assigning the result of an operation to a variable. Simply append an operation with `>[A]`, where 'A' is the destination matrix.
+
+As an example, `rref A >B` computes the reduced row echelon form of A and stores it in B, provided that the operation succeeded without errors. 

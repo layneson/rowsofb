@@ -46,16 +46,36 @@ func Run() {
 			break
 		}
 
+		lastEntry := fields[len(fields)-1]
+		hasRedirect := false
+		if strings.HasPrefix(lastEntry, ">") && len(fields) > 1 {
+			if _, err := environment.IsDefined(lastEntry[1:]); err != nil {
+				errorColor.Printf("[!] %v.\n", err)
+				continue
+			}
+			hasRedirect = true
+		}
+
 		cmd, ok := commands[fields[0]]
 		if !ok {
 			errorColor.Println("[!] That command does not exist.")
 			continue
 		}
 
-		err := cmd(environment, fields[1:])
-		if err != nil {
-			errorColor.Printf("[!] %v.\n", err)
-			continue
+		if hasRedirect {
+			err := cmd(environment, fields[1:len(fields)-1])
+			if err != nil {
+				errorColor.Printf("[!] %v.\n", err)
+				continue
+			}
+
+			environment.Set(lastEntry[1:], environment.GetResult())
+		} else {
+			err := cmd(environment, fields[1:])
+			if err != nil {
+				errorColor.Printf("[!] %v.\n", err)
+				continue
+			}
 		}
 
 		fmt.Println()
