@@ -244,8 +244,8 @@ func (m *M) MultiplyAndAddRow(r1 int, s Frac, r2 int) {
 	}
 }
 
-//Creates a copy of the matrix, with same contents and size.
-func copyMatrix(m M) M {
+//CopyMatrix creates a copy of the matrix, with same contents and size.
+func CopyMatrix(m M) M {
 	mm := M{r: m.r, c: m.c, values: make([]Frac, len(m.values))}
 	copy(mm.values, m.values)
 
@@ -281,7 +281,7 @@ func isLeadingEntry(m M, r, c int) bool {
 
 //Ref takes a copy of a matrix and returns itself in row echelon form.
 func Ref(m M) M {
-	m = copyMatrix(m)
+	m = CopyMatrix(m)
 
 	startr := 1
 	for c := 1; c <= m.Cols(); c++ { // find a leading entry in this column
@@ -314,7 +314,7 @@ func Ref(m M) M {
 
 //Rref takes a copy of a matrix and returns it in rrrrrrreduced rrrrow echelon-a forrrrm-a!
 func Rref(m M) M {
-	m = copyMatrix(m)
+	m = CopyMatrix(m)
 
 	m = Ref(m)
 
@@ -337,7 +337,7 @@ func Rref(m M) M {
 //Inverse takes a copy of a matrix and returns its inverse.
 //An error is returned if the matrix has no inverse.
 func Inverse(m M) (M, error) {
-	m = copyMatrix(m)
+	m = CopyMatrix(m)
 
 	if m.Rows() != m.Cols() {
 		return m, errors.New("non-square matrices have no inverse")
@@ -422,7 +422,7 @@ func Add(a, b M) (M, error) {
 		return a, errors.New("addition requires two identically-sized matrices")
 	}
 
-	rm := copyMatrix(b)
+	rm := CopyMatrix(b)
 
 	for r := 1; r <= rm.Rows(); r++ {
 		for c := 1; c <= rm.Cols(); c++ {
@@ -435,7 +435,7 @@ func Add(a, b M) (M, error) {
 
 //Scale scales a matrix by a... you guessed it... scalar. It returns this new matrix.
 func Scale(s Frac, m M) M {
-	m = copyMatrix(m)
+	m = CopyMatrix(m)
 
 	for r := 1; r <= m.Rows(); r++ {
 		m.MultiplyRow(r, s)

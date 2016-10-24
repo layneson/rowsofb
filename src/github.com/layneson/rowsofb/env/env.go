@@ -77,6 +77,8 @@ func (e *E) Get(v string) (matrix.M, error) {
 //Set sets the value at the given variable to the given matrix.
 //It returns an error if no such variable exists.
 func (e *E) Set(v string, m matrix.M) error {
+	m = matrix.CopyMatrix(m) // enforce copy
+
 	voff := getVarOffset(v)
 	if voff < 0 {
 		return InvalidVariableError{v}
