@@ -34,6 +34,7 @@ RowsOfB operates as an interactive shell. Every operation listed above is also a
  - `zero [A]`: Zeros matrix 'A'. Equivalent to `scl 0 [A]`.
  - `del [A]`: Deletes matrix 'A'. A deleted matrix has no size and no entries, and any operations using a deleted matrix raises an error.
  - `clr`: Deletes all matrices. This is the equivalent to restarting RowsOfB.
+ - `exit`: Exits RowsOfB.
 
 ## Assignment Shorthand
 

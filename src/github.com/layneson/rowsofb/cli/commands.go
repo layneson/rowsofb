@@ -384,6 +384,7 @@ var commandHelp = map[string]string{
 	"zero [A]":    "Sets every element of matrix 'A' to 0.",
 	"del [A]":     "Deletes matrix 'A'. A deleted matrix has no size and no entries, and any operation using a deleted matrix raises an error.",
 	"clr":         "Deletes all matrices. This is equivalent to restarting RowsOfB.",
+	"exit":        "Exits RowsOfB.",
 }
 
 func printHelp(cmd, desc string) {
