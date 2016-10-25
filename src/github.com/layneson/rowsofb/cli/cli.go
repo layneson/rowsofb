@@ -78,9 +78,11 @@ func Run() {
 			}
 		}
 
-		fmt.Println()
+		if fields[0] != "help" {
+			fmt.Println()
 
-		resultColor.Println(renderMatrix(environment.GetResult()))
-		fmt.Println()
+			resultColor.Println(renderMatrix(environment.GetResult()))
+			fmt.Println()
+		}
 	}
 }

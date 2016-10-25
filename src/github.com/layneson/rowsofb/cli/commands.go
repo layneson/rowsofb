@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/layneson/rowsofb/env"
 	"github.com/layneson/rowsofb/matrix"
 )
@@ -358,4 +359,39 @@ var commands = map[string]CommandHandler{
 
 		return nil
 	},
+
+	"help": func(e *env.E, args []string) error {
+		fmt.Println()
+
+		for cmd, hlp := range commandHelp {
+			printHelp(cmd, hlp)
+		}
+		return nil
+	},
+}
+
+var commandHelp = map[string]string{
+	"inv [A]":     "Calculates the inverse of 'A', or indicates that no such inverse exists.",
+	"trans [A]":   "Calculates the transpose of 'A'.",
+	"ref [A]":     "Uses Gauss-Jordan elimination to put 'A' into row echelon form.",
+	"rref [A]":    "Uses Gauss-Jordan elimination to put 'A' into reduced row echelon form.",
+	"add [A] [B]": "Adds matrix 'A' to 'B'. The matrices must have identical dimensions.",
+	"mul [A] [B]": "Multiplies matrix 'A' by 'B'. The number of columns of A must equal the number of rows of B.",
+	"scl c [A]":   "Multiplies matrix 'A' by the scalar 'c'. The scalar can be a fraction or an integer.",
+	"aug [A] [B]": "Augments 'A' with 'B'. A must have the same number of rows as B.",
+	"def [A]":     "Opens an interactive process to define the matrix 'A'.",
+	"set [A] [B]": "Sets matrix 'A' to matrix 'B'. In essence, it copies 'B' into 'A'. B is optional; if B is not specified, the result is stored into A.",
+	"zero [A]":    "Sets every element of matrix 'A' to 0.",
+	"del [A]":     "Deletes matrix 'A'. A deleted matrix has no size and no entries, and any operation using a deleted matrix raises an error.",
+	"clr":         "Deletes all matrices. This is equivalent to restarting RowsOfB.",
+}
+
+func printHelp(cmd, desc string) {
+	cfields := strings.Fields(cmd)
+	color.New(color.FgBlue).Print(cfields[0])
+	for _, ce := range cfields[1:] {
+		color.New(color.FgHiBlue).Printf(" %s", ce)
+	}
+	color.New(color.FgMagenta).Printf("    -    %s\n", desc)
+	fmt.Println()
 }
