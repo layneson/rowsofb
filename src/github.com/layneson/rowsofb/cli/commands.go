@@ -249,8 +249,6 @@ var commands = map[string]CommandHandler{
 		}
 
 		for {
-			//fmt.Print(":\t")
-
 			scanner.Scan()
 			line := scanner.Text()
 
@@ -270,7 +268,7 @@ var commands = map[string]CommandHandler{
 					return err
 				}
 
-				mvals = append(mvals, f)
+				mvals = append(mvals, f.Reduce())
 			}
 		}
 
