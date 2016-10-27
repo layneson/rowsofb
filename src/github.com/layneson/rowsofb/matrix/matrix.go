@@ -215,7 +215,7 @@ func (m M) Get(r, c int) Frac {
 //Set sets the value at the specified row and column to the given fraction.
 func (m *M) Set(r, c int, v Frac) {
 	r, c = r-1, c-1
-	m.values[r*m.c+c] = v
+	m.values[r*m.c+c] = v.Reduce()
 }
 
 //SwitchRows switches two rows. It is an elementary row operation.

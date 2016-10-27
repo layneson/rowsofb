@@ -245,7 +245,7 @@ var commands = map[string]CommandHandler{
 				return err
 			}
 
-			mvals = append(mvals, f)
+			mvals = append(mvals, f.Reduce())
 		}
 
 		for {
