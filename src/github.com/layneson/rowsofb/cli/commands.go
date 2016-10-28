@@ -282,6 +282,27 @@ var commands = map[string]CommandHandler{
 		return nil
 	},
 
+	"ident": func(e *env.E, args []string) error {
+		if len(args) != 1 {
+			return errIncorrectNumberOfArgs
+		}
+
+		size, err := strconv.Atoi(args[0])
+		if err != nil || size <= 0 {
+			return errors.New("invalid square matrix size")
+		}
+
+		rm := matrix.New(size, size)
+
+		for p := 1; p <= size; p++ {
+			rm.Set(p, p, matrix.NewScalarFrac(1))
+		}
+
+		e.SetResult(rm)
+
+		return nil
+	},
+
 	"print": func(e *env.E, args []string) error {
 		if len(args) != 1 {
 			return errIncorrectNumberOfArgs
@@ -317,28 +338,38 @@ var commands = map[string]CommandHandler{
 	},
 
 	"zero": func(e *env.E, args []string) error {
-		if len(args) != 1 {
+		if len(args) != 2 {
 			return errIncorrectNumberOfArgs
 		}
 
-		m, err := e.Get(args[0])
-		if err != nil {
-			return err
+		rc, err := strconv.Atoi(args[0])
+		if err != nil || rc <= 0 {
+			return errors.New("invalid row count")
 		}
 
-		for r := 1; r <= m.Rows(); r++ {
-			for c := 1; c <= m.Cols(); c++ {
-				m.Set(r, c, matrix.NewScalarFrac(0))
-			}
+		cc, err := strconv.Atoi(args[1])
+		if err != nil || cc <= 0 {
+			return errors.New("invalid column count")
 		}
 
-		err = e.Set(args[0], m)
-		if err != nil {
-			return err
-		}
+		rm := matrix.New(rc, cc)
+
+		e.SetResult(rm)
 
 		return nil
 	},
+
+	// "dim": func(e *env.E, args []string) error {
+	// 	if len(args) != 1 {
+	// 		return errIncorrectNumberOfArgs
+	// 	}
+
+	// 	m, err := e.Get(args[0])
+	// 	if err != nil {
+	// 		return err
+	// 	}
+
+	// }
 
 	"del": func(e *env.E, args []string) error {
 		if len(args) != 1 {
@@ -378,8 +409,9 @@ var commandHelp = map[string]string{
 	"scl c [A]":   "Multiplies matrix 'A' by the scalar 'c'. The scalar can be a fraction or an integer.",
 	"aug [A] [B]": "Augments 'A' with 'B'. A must have the same number of rows as B.",
 	"def [A]":     "Opens an interactive process to define the matrix 'A'.",
+	"ident s":     "Produces the identity matrix of size 's'.",
 	"set [A] [B]": "Sets matrix 'A' to matrix 'B'. In essence, it copies 'B' into 'A'. B is optional; if B is not specified, the result is stored into A.",
-	"zero [A]":    "Sets every element of matrix 'A' to 0.",
+	"zero r c":    "Produces a zero matrix with 'r' rows and 'c' columns.",
 	"del [A]":     "Deletes matrix 'A'. A deleted matrix has no size and no entries, and any operation using a deleted matrix raises an error.",
 	"clr":         "Deletes all matrices. This is equivalent to restarting RowsOfB.",
 	"exit":        "Exits RowsOfB.",

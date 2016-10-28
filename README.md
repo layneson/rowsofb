@@ -10,7 +10,7 @@ RowsOfB is terminal-based because it is convenient to have on a computer. Many s
 
 RowsOfB supports a number of matrix operations. Some are unary, and some are binary. Binary operations take either two matrices or a scalar and a matrix.
 
-In the following documentation, `[A]` denotes the matrix named 'A' and `c` denotes a scalar. When entering commands, the brackets shown are _not_ typed.
+In the following documentation, `[A]` denotes the matrix named 'A', `c` denotes a scalar, and other lowercase letters denote matrix dimensions. When entering commands, the brackets shown are _not_ typed. The matrix variable `$` represents the result variable, and can be used in place of any matrix variables below.
 
 ### Unary operations
  - `inv [A]`: Calculates the inverse of 'A', or indicates that no such inverse exists.
@@ -26,12 +26,13 @@ In the following documentation, `[A]` denotes the matrix named 'A' and `c` denot
 
 ## Commands
 
-RowsOfB operates as an interactive shell. Every operation listed above is also a command. The result of every command is stored in a hidden result slot. In addition to those operations, several commands exist:
+RowsOfB operates as an interactive shell. Every operation listed above is also a command. The result of every command is stored in the result variable and printed following execution. In addition to those operations, several commands exist:
 
  - `def [A]`: Opens an interactive process to define the matrix 'A'.
+ - `ident s`: Produces the identity matrix of size 's'.
  - `set [A] [B]`: Sets matrix 'A' to matrix 'B'. In essence, it copies 'B' into 'A'.
  - `set [A]`: Sets matrix 'A' to the result of the last command.
- - `zero [A]`: Zeros matrix 'A'. Equivalent to `scl 0 [A]`.
+ - `zero r c`: Produces the zero matrix with 'r' rows and 'c' columns.
  - `del [A]`: Deletes matrix 'A'. A deleted matrix has no size and no entries, and any operations using a deleted matrix raises an error.
  - `clr`: Deletes all matrices. This is the equivalent to restarting RowsOfB.
  - `exit`: Exits RowsOfB.

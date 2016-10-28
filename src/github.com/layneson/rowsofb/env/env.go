@@ -51,6 +51,10 @@ func New() *E {
 //IsDefined returns true if the variable in v has a value in the environment.
 //It returns an error if the variable is unrecognized.
 func (e *E) IsDefined(v string) (bool, error) {
+	if v == "$" {
+		return true, nil
+	}
+
 	voff := getVarOffset(v)
 	if voff < 0 {
 		return false, InvalidVariableError{v}
@@ -62,6 +66,10 @@ func (e *E) IsDefined(v string) (bool, error) {
 //Get returns the value of the matrix at the given variable name.
 //It returns an error if the given variable name is invalid or if the matrix is undefined.
 func (e *E) Get(v string) (matrix.M, error) {
+	if v == "$" {
+		return e.res.value, nil
+	}
+
 	voff := getVarOffset(v)
 	if voff < 0 {
 		return matrix.M{}, InvalidVariableError{v}
@@ -77,6 +85,10 @@ func (e *E) Get(v string) (matrix.M, error) {
 //Set sets the value at the given variable to the given matrix.
 //It returns an error if no such variable exists.
 func (e *E) Set(v string, m matrix.M) error {
+	if v == "$" {
+		return nil
+	}
+
 	m = matrix.CopyMatrix(m) // enforce copy
 
 	voff := getVarOffset(v)
