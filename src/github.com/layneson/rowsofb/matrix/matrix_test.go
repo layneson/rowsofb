@@ -55,7 +55,7 @@ func matrixEquals(m1, m2 M) bool {
 
 func TestFracAdd(t *testing.T) {
 	res := NewFrac(-15, 2).Add(NewFrac(7, 8))
-	if !fractionEquals(res, NewFrac(-53, 8)) {
+	if !fractionEquals(res.Reduce(), NewFrac(-53, 8)) {
 		t.Errorf("Fraction addition failed: expected %v but got %v", NewFrac(-53, 8), res)
 	}
 }
@@ -167,9 +167,9 @@ func TestRref(t *testing.T) {
 			{"2", "3", "4"},
 			{"5/2", "6/3", "7/8"},
 		}), manualMatrix([][]string{
-			{"1", "0", "-1"},
-			{"0", "1", "2"},
-			{"0", "0", "-5/8"},
+			{"1", "0", "0"},
+			{"0", "1", "0"},
+			{"0", "0", "1"},
 		})},
 
 		{New(5, 5), New(5, 5)},
@@ -178,7 +178,7 @@ func TestRref(t *testing.T) {
 	for _, tst := range tests {
 		res := Rref(tst[0])
 		if !matrixEquals(res, tst[1]) {
-			t.Error("Incorrect matrix row reduction result!")
+			t.Errorf("Incorrect matrix row reduction result! Wanted\n %v but got\n %v", tst[1], res)
 		}
 	}
 }
