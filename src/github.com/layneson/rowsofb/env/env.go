@@ -2,151 +2,529 @@ package env
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
+	"github.com/layneson/rowsofb/lang"
 	"github.com/layneson/rowsofb/matrix"
 )
 
-var varnames = strings.Split("A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z", ",")
+// MatrixDefiner is a function which takes a matrix variable name and returns the matrix the user defined for it.
+// The bool return value is false if the user cancelled the process and true otherwise.
+type MatrixDefiner func(rune) (matrix.M, bool)
 
-func getVarOffset(s string) int {
-	for i, v := range varnames {
-		if s == v {
-			return i
-		}
+// AnonymousMatrixDefiner is a function which returns a user-defined anonymous matrix.
+// The bool return value is false if the user cancelled the process and true otherwise.
+type AnonymousMatrixDefiner func() (matrix.M, bool)
+
+// ScalarDefiner is a function which takes a scalar variable name and returns the scalar the user defined for it.
+// The bool return value is false if the user cancelled the process and true otherwise.
+type ScalarDefiner func(rune) (matrix.Frac, bool)
+
+// E represents an environment which contains 26 matrix variables (A-Z) and 26 scalar variables (a-z).
+// The variables Z and z are set to the results of matrix and scalar-resolving expressions, respectively.
+type E struct {
+	mvars []matrix.M
+	svars []matrix.Frac
+
+	mdef  MatrixDefiner
+	amdef AnonymousMatrixDefiner
+	sdef  ScalarDefiner
+}
+
+// New creates a new environment. Each matrix variable defaults to a 3x3 zero matrix
+// and each scalar variable defaults to zero.
+func New(mdef MatrixDefiner, amdef AnonymousMatrixDefiner, sdef ScalarDefiner) *E {
+	e := &E{mdef: mdef, amdef: amdef, sdef: sdef}
+
+	for r := 'A'; r <= 'Z'; r++ {
+		e.mvars = append(e.mvars, matrix.New(3, 3))
 	}
 
-	return -1
-}
-
-//mvar represents a matrix variable value. It either exists or doesn't.
-type mvar struct {
-	exists bool // defaults to false
-
-	value matrix.M
-}
-
-//E represents an environment with 26 matrix variables, A-Z, and a result variable.
-type E struct {
-	res mvar
-
-	vars []mvar
-}
-
-//New initializes an enviroment and returns a pointer to it.
-func New() *E {
-	e := &E{}
-
-	e.res = mvar{exists: true, value: matrix.New(3, 3)} // initialize result with a 3x3 zero matrix
-
-	e.vars = make([]mvar, len(varnames))
-
-	for i := range e.vars {
-		e.vars[i] = mvar{false, matrix.M{}}
+	for r := 'a'; r <= 'z'; r++ {
+		e.svars = append(e.svars, matrix.NewScalarFrac(0))
 	}
 
 	return e
 }
 
-//IsDefined returns true if the variable in v has a value in the environment.
-//It returns an error if the variable is unrecognized.
-func (e *E) IsDefined(v string) (bool, error) {
-	if v == "$" {
-		return true, nil
-	}
-
-	voff := getVarOffset(v)
-	if voff < 0 {
-		return false, InvalidVariableError{v}
-	}
-
-	return e.vars[voff].exists, nil
+// GetMVar returns the value of the given matrix variable.
+// It assumes the given rune is a valid matrix variable name.
+func (e *E) GetMVar(v rune) matrix.M {
+	return e.mvars[v-'A']
 }
 
-//Get returns the value of the matrix at the given variable name.
-//It returns an error if the given variable name is invalid or if the matrix is undefined.
-func (e *E) Get(v string) (matrix.M, error) {
-	if v == "$" {
-		return e.res.value, nil
-	}
-
-	voff := getVarOffset(v)
-	if voff < 0 {
-		return matrix.M{}, InvalidVariableError{v}
-	}
-
-	if !e.vars[voff].exists {
-		return matrix.M{}, UndefinedVariableError{v}
-	}
-
-	return e.vars[voff].value, nil
+// SetMVar sets the value of the given matrix variable to the given matrix.
+// It assumes the given rune is a valid matrix variable name.
+func (e *E) SetMVar(v rune, m matrix.M) {
+	e.mvars[v-'A'] = m
 }
 
-//Set sets the value at the given variable to the given matrix.
-//It returns an error if no such variable exists.
-func (e *E) Set(v string, m matrix.M) error {
-	if v == "$" {
-		return nil
+// GetSVar returns the value of the given scalar variable.
+// It assumes the given rune is a valid scalar variable name.
+func (e *E) GetSVar(v rune) matrix.Frac {
+	return e.svars[v-'a']
+}
+
+// SetSVar sets the value of the given scalar variable to the given scalar.
+// It assumes the given rune is a valid scalar variable name.
+func (e *E) SetSVar(v rune, m matrix.Frac) {
+	e.svars[v-'a'] = m.Reduce()
+}
+
+// VarType represents the type of a certain variable.
+type VarType int
+
+// VarType definitions
+const (
+	MVar VarType = iota
+	SVar
+	InvalidVar
+)
+
+func (vt VarType) String() string {
+	switch vt {
+	case MVar:
+		return "mvar"
+	case SVar:
+		return "svar"
+	case InvalidVar:
+		return "invalid"
 	}
 
-	m = matrix.CopyMatrix(m) // enforce copy
+	return "unknown"
+}
 
-	voff := getVarOffset(v)
-	if voff < 0 {
-		return InvalidVariableError{v}
+// GetVarType returns the type of variable that the given rune represents.
+// Returns InvalidVar if v does not represent a valid variable.
+func GetVarType(v rune) VarType {
+	if v >= 'A' && v <= 'Z' {
+		return MVar
 	}
 
-	e.vars[voff].exists = true
-	e.vars[voff].value = m
+	if v >= 'a' && v <= 'z' {
+		return SVar
+	}
+
+	return InvalidVar
+}
+
+// Value represents either a matrix or scalar value.
+type Value struct {
+	VType VarType
+
+	MValue matrix.M
+	SValue matrix.Frac
+}
+
+// Evaluate evaluates a lang.ExprNode within the context of the given environment, returning an error if one occurs.
+// It also returns a Value which holds the expression result.
+func Evaluate(enode *lang.ExprNode, env *E) (*Value, error) {
+	val, err := evalExpr(enode, env)
+	if err != nil {
+		return nil, err
+	}
+
+	if enode.ResultVar != nil {
+		if val.VType == MVar && enode.ResultVar.TType == lang.TTSVar {
+			return nil, fmt.Errorf("cannot assign a matrix value to a scalar variable")
+		}
+
+		if val.VType == SVar && enode.ResultVar.TType == lang.TTMVar {
+			return nil, fmt.Errorf("cannot assign a scalar value to a matrix variable")
+		}
+
+		v := rune(enode.ResultVar.Literal[0])
+
+		switch val.VType {
+		case MVar:
+			env.SetMVar(v, val.MValue)
+		case SVar:
+			env.SetSVar(v, val.SValue)
+		}
+	}
+
+	return val, nil
+}
+
+func evalExpr(enode *lang.ExprNode, env *E) (*Value, error) {
+	first, err := evalTerm(enode.First, env)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, tnode := range enode.Terms {
+		op := enode.Operators[i]
+
+		tval, err := evalTerm(tnode, env)
+		if err != nil {
+			return nil, err
+		}
+
+		first, err = evalAddition(op.TType == lang.TTMinus, first, tval)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return first, nil
+}
+
+func evalAddition(subtraction bool, left, right *Value) (*Value, error) {
+	if left.VType != right.VType {
+		return nil, fmt.Errorf("cannot perform addition or subtraction with a scalar and a matrix")
+	}
+
+	if left.VType == SVar {
+		if subtraction {
+			right.SValue = right.SValue.Neg()
+		}
+
+		return &Value{VType: SVar, SValue: left.SValue.Add(right.SValue)}, nil
+	}
+
+	if subtraction {
+		right.MValue = matrix.Scale(matrix.NewScalarFrac(-1), right.MValue)
+	}
+
+	if left.MValue.Cols() != right.MValue.Cols() || left.MValue.Rows() != right.MValue.Rows() {
+		return nil, fmt.Errorf("cannot perform addition or subtraction on two matrices of different sizes")
+	}
+
+	sum, _ := matrix.Add(left.MValue, right.MValue)
+
+	return &Value{VType: MVar, MValue: sum}, nil
+}
+
+func evalTerm(tnode *lang.TermNode, env *E) (*Value, error) {
+	fstack := vstack{}
+	ostack := tstack{}
+	divqueue := []*Value{}
+
+	for i := len(tnode.Factors) - 1; i >= 0; i-- {
+		val, err := evalFactor(tnode.Factors[i], env)
+		if err != nil {
+			return nil, err
+		}
+
+		fstack.push(val)
+	}
+
+	fval, err := evalFactor(tnode.First, env)
+	if err != nil {
+		return nil, err
+	}
+
+	fstack.push(fval)
+
+	for i := len(tnode.Operators) - 1; i >= 0; i-- {
+		ostack.push(tnode.Operators[i])
+	}
+
+	for ostack.canPop() {
+		op := ostack.pop()
+
+		if op.TType == lang.TTDiv {
+			divqueue = append(divqueue, fstack.pop())
+			continue
+		}
+
+		right := fstack.pop()
+		left := fstack.pop()
+
+		val, err := evalMultiplication(false, left, right)
+		if err != nil {
+			return nil, err
+		}
+
+		fstack.push(val)
+	}
+
+	divqueue = append(divqueue, fstack.pop())
+
+	divaccum := divqueue[0]
+
+	for i := 1; i < len(divqueue); i++ {
+		val, err := evalMultiplication(true, divaccum, divqueue[i])
+		if err != nil {
+			return nil, err
+		}
+
+		divaccum = val
+	}
+
+	return divaccum, nil
+}
+
+func evalMultiplication(division bool, left, right *Value) (*Value, error) {
+	if left.VType == SVar && right.VType == SVar {
+		rrec := right.SValue
+		if division {
+			rrec = rrec.Reciprocal()
+		}
+
+		return &Value{VType: SVar, SValue: left.SValue.Mul(rrec).Reduce()}, nil
+	}
+
+	if left.VType == SVar && right.VType == MVar {
+		if division {
+			return nil, fmt.Errorf("cannot divide a scalar by a matrix")
+		}
+
+		return &Value{VType: MVar, MValue: matrix.Scale(left.SValue, right.MValue)}, nil
+	}
+
+	if left.VType == MVar && right.VType == SVar {
+		rrec := right.SValue
+		if division {
+			rrec = rrec.Reciprocal()
+		}
+
+		return &Value{VType: MVar, MValue: matrix.Scale(rrec, left.MValue)}, nil
+	}
+
+	if left.MValue.Cols() != right.MValue.Rows() {
+		return nil, fmt.Errorf("cannot multiply a %dx%d matrix by a %dx%d matrix", left.MValue.Rows(), left.MValue.Cols(), right.MValue.Rows(), right.MValue.Cols())
+	}
+
+	if division {
+		return nil, fmt.Errorf("cannot divide a matrix by a matrix")
+	}
+
+	product, _ := matrix.Multiply(left.MValue, right.MValue)
+
+	return &Value{VType: MVar, MValue: product}, nil
+}
+
+func evalFactor(fnode *lang.FactorNode, env *E) (*Value, error) {
+	val, err := evalFactorIgnoreNeg(fnode, env)
+	if err != nil {
+		return nil, err
+	}
+
+	if fnode.Neg != nil {
+		switch val.VType {
+		case MVar:
+			val.MValue = matrix.Scale(matrix.NewScalarFrac(-1), val.MValue)
+		case SVar:
+			val.SValue = val.SValue.Mul(matrix.NewScalarFrac(-1))
+		}
+	}
+
+	return val, nil
+}
+
+func evalFactorIgnoreNeg(fnode *lang.FactorNode, env *E) (*Value, error) {
+	switch fnode.FType {
+	case lang.NumFactor:
+		num, _ := strconv.Atoi(fnode.Num.Literal)
+		return &Value{VType: SVar, SValue: matrix.NewScalarFrac(num)}, nil
+	case lang.ParenFactor:
+		return evalExpr(fnode.ParenExpr, env)
+	case lang.FuncFactor:
+		return evalFunction(fnode, env)
+	}
+
+	switch fnode.Variable.TType {
+	case lang.TTDMVar:
+		v := rune(fnode.Variable.Literal[1])
+		mat, ok := env.mdef(v)
+		if !ok {
+			return nil, fmt.Errorf("user cancelled matrix input")
+		}
+		env.SetMVar(v, mat)
+		return &Value{VType: MVar, MValue: mat}, nil
+	case lang.TTDSVar:
+		v := rune(fnode.Variable.Literal[1])
+		scal, ok := env.sdef(v)
+		if !ok {
+			return nil, fmt.Errorf("user cancelled scalar input")
+		}
+		env.SetSVar(v, scal)
+		return &Value{VType: SVar, SValue: scal}, nil
+	case lang.TTDAMVar:
+		mat, ok := env.amdef()
+		if !ok {
+			return nil, fmt.Errorf("user cancelled matrix input")
+		}
+		return &Value{VType: MVar, MValue: mat}, nil
+	case lang.TTMVar:
+		v := rune(fnode.Variable.Literal[0])
+		mat := env.GetMVar(v)
+		return &Value{VType: MVar, MValue: mat}, nil
+	case lang.TTSVar:
+		v := rune(fnode.Variable.Literal[0])
+		scal := env.GetSVar(v)
+		return &Value{VType: SVar, SValue: scal}, nil
+	}
+
+	return nil, fmt.Errorf("unexpected factor")
+}
+
+func evalFunction(fnode *lang.FactorNode, env *E) (*Value, error) {
+	fname := fnode.Function.Literal
+
+	fn, ok := functions[fname]
+	if !ok {
+		return nil, fmt.Errorf("%q is not a valid function", fname)
+	}
+
+	vals := []*Value{}
+
+	for _, enode := range fnode.FuncArgs {
+		val, err := evalExpr(enode, env)
+		if err != nil {
+			return nil, err
+		}
+
+		vals = append(vals, val)
+	}
+
+	err := checkFunctionArgs(vals, fname, fn)
+	if err != nil {
+		return nil, err
+	}
+
+	return fn.handler(vals)
+}
+
+type vstack struct {
+	stack []*Value
+}
+
+func (s *vstack) push(v *Value) {
+	s.stack = append(s.stack, v)
+}
+
+func (s *vstack) canPop() bool {
+	return len(s.stack) > 0
+}
+
+func (s *vstack) pop() *Value {
+	v := s.stack[len(s.stack)-1]
+	s.stack = s.stack[:len(s.stack)-1]
+	return v
+}
+
+type tstack struct {
+	stack []*lang.Token
+}
+
+func (s *tstack) push(t *lang.Token) {
+	s.stack = append(s.stack, t)
+}
+
+func (s *tstack) canPop() bool {
+	return len(s.stack) > 0
+}
+
+func (s *tstack) pop() *lang.Token {
+	t := s.stack[len(s.stack)-1]
+	s.stack = s.stack[:len(s.stack)-1]
+	return t
+}
+
+type function struct {
+	signature []VarType
+	vnames    []string
+	handler   func([]*Value) (*Value, error)
+}
+
+var functions = map[string]function{
+	"identity": function{
+		[]VarType{SVar},
+		[]string{"size"},
+		func(vals []*Value) (*Value, error) {
+			if !vals[0].SValue.IsWhole() {
+				return nil, fmt.Errorf("size must be an integer")
+			}
+
+			n := vals[0].SValue.Integer()
+
+			if n < 0 {
+				return nil, fmt.Errorf("size must be positive")
+			}
+
+			return &Value{
+				VType:  MVar,
+				MValue: matrix.Identity(n),
+			}, nil
+		},
+	},
+
+	"ref": function{
+		[]VarType{MVar},
+		[]string{"mat"},
+		func(vals []*Value) (*Value, error) {
+			return &Value{
+				VType:  MVar,
+				MValue: matrix.Ref(vals[0].MValue),
+			}, nil
+		},
+	},
+
+	"rref": function{
+		[]VarType{MVar},
+		[]string{"mat"},
+		func(vals []*Value) (*Value, error) {
+			return &Value{
+				VType:  MVar,
+				MValue: matrix.Rref(vals[0].MValue),
+			}, nil
+		},
+	},
+}
+
+func checkFunctionArgs(vals []*Value, fname string, fn function) error {
+	if len(vals) != len(fn.signature) {
+		return fmt.Errorf("call to %s takes %d arguments, but was supplied %d", fname, len(fn.signature), len(vals))
+	}
+
+	correct := true
+	for i, vtype := range fn.signature {
+		if vtype != vals[i].VType {
+			correct = false
+			break
+		}
+	}
+
+	if !correct {
+		return fmt.Errorf("call to %s expects arguments (%s) but was supplied (%s)", fname, vartypesToString(fn.signature), valuesVartypesToString(vals))
+	}
 
 	return nil
 }
 
-//GetResult returns the value of the result variable.
-func (e *E) GetResult() matrix.M {
-	return e.res.value
-}
+func vartypesToString(vtypes []VarType) string {
+	strs := []string{}
+	for _, vtype := range vtypes {
+		var s string
+		switch vtype {
+		case MVar:
+			s = "matrix"
+		case SVar:
+			s = "scalar"
+		}
 
-//SetResult sets the value of the result variable.
-func (e *E) SetResult(m matrix.M) {
-	e.res.value = m
-}
-
-//Delete sets a variable to be undefined.
-func (e *E) Delete(v string) error {
-	voff := getVarOffset(v)
-	if voff < 0 {
-		return InvalidVariableError{v}
+		strs = append(strs, s)
 	}
 
-	e.vars[voff].exists = false
-
-	return nil
+	return strings.Join(strs, ", ")
 }
 
-//Clear deletes all variables and resets the result variable to the 3x3 zero matrix.
-func (e *E) Clear() {
-	e.res.value = matrix.New(3, 3)
+func valuesVartypesToString(vals []*Value) string {
+	strs := []string{}
+	for _, val := range vals {
+		var s string
+		switch val.VType {
+		case MVar:
+			s = "matrix"
+		case SVar:
+			s = "scalar"
+		}
 
-	for i := range varnames {
-		e.vars[i].exists = false
+		strs = append(strs, s)
 	}
-}
 
-//InvalidVariableError represents an error where an invalid variable name was passed to an env function.
-type InvalidVariableError struct {
-	vname string
-}
-
-func (i InvalidVariableError) Error() string {
-	return fmt.Sprintf("%q is not a valid variable name", i.vname)
-}
-
-//UndefinedVariableError represents an error where an undefined variable is accessed.
-type UndefinedVariableError struct {
-	vname string
-}
-
-func (u UndefinedVariableError) Error() string {
-	return fmt.Sprintf("%q is undefined", u.vname)
+	return strings.Join(strs, ", ")
 }

@@ -92,6 +92,31 @@ func TestGCD(t *testing.T) {
 	}
 }
 
+func TestInteger(t *testing.T) {
+	tinputs := []Frac{
+		NewFrac(-5, -5),
+		NewFrac(-5, 5),
+		NewFrac(5, -5),
+		NewFrac(25, 5),
+		NewFrac(-25, 5),
+	}
+	toutputs := []int{
+		1,
+		-1,
+		-1,
+		5,
+		-5,
+	}
+
+	for i, input := range tinputs {
+		n := input.Integer()
+
+		if n != toutputs[i] {
+			t.Errorf("expected %d but got %d", toutputs[i], n)
+		}
+	}
+}
+
 func TestIsLeadingEntry(t *testing.T) {
 	input := manualMatrix([][]string{
 		{"2", "3", "1", "-1"},

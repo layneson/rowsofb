@@ -52,6 +52,19 @@ func ParseFrac(s string) (Frac, error) {
 	return NewFrac(n, d), nil
 }
 
+//Integer performs integer division on numerator/denominator and returns the result.
+func (f Frac) Integer() int {
+	return f.n / f.d
+}
+
+//Equals returns true if the two fractions are equivalent, and false otherwise.
+func (f Frac) Equals(f1 Frac) bool {
+	f = f.Reduce()
+	f1 = f1.Reduce()
+
+	return f.n == f1.n && f.d == f1.d
+}
+
 //String returns a string representation of the fraction.
 func (f Frac) String() string {
 	if f.d == 1 {
@@ -63,6 +76,11 @@ func (f Frac) String() string {
 //IsZero returns true if the fraction is equal to zero.
 func (f Frac) IsZero() bool {
 	return f.n == 0
+}
+
+//IsWhole returns true if the fraction can be reduced to a whole number, and false otherwise.
+func (f Frac) IsWhole() bool {
+	return f.Reduce().d == 1
 }
 
 //normalizeSignage is the only method that mutates Frac. It fixes negative n and d, and also moves the negative from d to n if it exists.
@@ -136,6 +154,10 @@ func gcd(i1, i2 int) int {
 
 //Reduce reduces the fraction and returns the result.
 func (f Frac) Reduce() Frac {
+	if f.n == 0 {
+		return Frac{n: 0, d: 1}
+	}
+
 	d := gcd(f.n, f.d)
 
 	f1 := Frac{n: f.n / d, d: f.d / d}
@@ -167,6 +189,23 @@ func New(r, c int) M {
 	}
 
 	return M{r: r, c: c, values: vals}
+}
+
+//Equals returns true if the two matrices are equivalent, and false otherwise.
+func (m M) Equals(m1 M) bool {
+	if m.Cols() != m1.Cols() || m.Rows() != m1.Rows() {
+		return false
+	}
+
+	for r := 1; r <= m.Rows(); r++ {
+		for c := 1; c <= m.Cols(); c++ {
+			if !m.Get(r, c).Equals(m1.Get(r, c)) {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 //String returns a string representation of the matrix.
